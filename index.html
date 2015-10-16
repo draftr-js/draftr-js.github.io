@@ -77,10 +77,15 @@ body {
   background: #ECF0F1;
   font-family: Menlo, Courier, monospace;
   font-size: 12px;
-  width: 170ex;
   height: 95%;
+  margin: 0
+}
+
+#container{
+  width: 170ex;
   margin: 1em auto;
   text-align: center;
+  height: 95%;
 }
 
 textarea {
@@ -119,12 +124,38 @@ form {
   display: none;
 }
 
+#forkme {
+  display: block;
+  float: left;
+  background: #3498DB;
+  color: #ECF0F1;
+  margin: 0;
+}
+
+#forkme a {
+  text-decoration: none
+  color: inherit;
+}
+
+#forkme a i {
+  font-size: 150%;
+}
+
 </style>
+<!-- Github icon font -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 </head>
 
 <body>
 
+<div id="forkme">
+  <a href="https://github.com/draftr-js/draftr-js.github.io">
+    <i class="fa fa-code-fork"></i> me on <i class="fa fa-github"></i>
+  </a>
+</div>
+
 <!-- Main markup section -->
+<div id="container">
 <button id="go">markdown --&gt; rfc</button><br/>
 <textarea id="in"></textarea>
 <textarea id="out"></textarea>
@@ -143,6 +174,7 @@ form {
   <input type="hidden" id="downloadName" name="name"/>
 </form>
 -->
+</div>
 
 </body>
 </html>
