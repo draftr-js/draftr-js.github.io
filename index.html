@@ -70,7 +70,7 @@ $(document).ready(function() {
   })
 
   // Automatically run the transform after a keypress, throttled with a timer.
-  $("#in").keypress(function() {
+  $("#in").keyup(function() {
     if (state.timer) {
       clearTimeout(state.timer);
     }
