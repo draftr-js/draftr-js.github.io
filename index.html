@@ -18,21 +18,27 @@ var state = {
   timer: null
 }
 
+// Save the doc.  If 'cur' is specified, this is a new doc, and we need
+// to store its identifier.
+function save(cur) {
+  if (cur) {
+    localStorage['CURRENT'] = cur;
+  } else {
+    cur = localStorage['CURRENT'];
+  }
+  localStorage['DOCUMENT-'+cur] = $("#in")[0].value;
+}
+
+function load(cur) {
+  localStorage['CURRENT'] = cur;
+  $("#in")[0].value = localStorage['DOCUMENT-'+cur];
+  $("#go").click();
+}
+
 $(document).ready(function() {
   var IN = $("#in")[0],
-    OUT = $("#out")[0];
-
-  // Populate a minimal mkd file in the input
-  $.ajax({
-    url: "https://ipv.sx/draftr-js.github.io/complete.md",
-    type: "get",
-    dataType: "text",
-    success: function(response) {
-      IN.value = response;
-      window.ast = fromMD(IN.value)
-      OUT.value = toTXT(fromMD(IN.value));
-    }
-  })
+    OUT = $("#out")[0],
+    cur = localStorage['CURRENT'];
 
   // Attach the compile action to the button
   $("#go").click(function() {
@@ -71,6 +77,8 @@ $(document).ready(function() {
 
   // Automatically run the transform after a keypress, throttled with a timer.
   $("#in").keyup(function() {
+    // Store on every keypress until this becomes a perf issue
+    save();
     if (state.timer) {
       clearTimeout(state.timer);
     }
@@ -79,6 +87,23 @@ $(document).ready(function() {
       $("#go").click();
     }, 1000);
   });
+
+  if (cur) {
+    load(cur);
+  } else {
+    // Populate a minimal mkd file in the input
+    $.ajax({
+      url: "https://ipv.sx/draftr-js.github.io/complete.md",
+      type: "get",
+      dataType: "text",
+      success: function(response) {
+        IN.value = response;
+        window.ast = fromMD(IN.value)
+        OUT.value = toTXT(fromMD(IN.value));
+      }
+    })
+    save(new Date().getTime());
+  }
 });
 </script>
 <style>
