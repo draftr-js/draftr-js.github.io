@@ -14,7 +14,8 @@ var state = {
   mkd: null,
   xml: null,
   txt: null,
-  name: null
+  name: null,
+  timer: null
 }
 
 $(document).ready(function() {
@@ -67,6 +68,17 @@ $(document).ready(function() {
     // Submit the form
     $("#dlForm").submit();
   })
+
+  // Automatically run the transform after a keypress, throttled with a timer.
+  $("#in").keypress(function() {
+    if (state.timer) {
+      clearTimeout(state.timer);
+    }
+    state.timer = setTimeout(function(){
+      state.timer = null;
+      $("#go").click();
+    }, 1000);
+  });
 });
 </script>
 <style>
