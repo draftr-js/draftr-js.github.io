@@ -8,7 +8,7 @@ In order to provide a modern, webby toolkit for making Internet-drafts, draftr.j
 ## Quickstart
 
 ```
-> git clone
+> git clone https://github.com/draftr-js/draftr-js.github.io.git
 > # Open index.html in a browser
 ```
 
