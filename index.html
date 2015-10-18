@@ -21,18 +21,65 @@ var state = {
 // Save the doc.  If 'cur' is specified, this is a new doc, and we need
 // to store its identifier.
 function save(cur) {
+  $("#go").click();
   if (cur) {
     localStorage['CURRENT'] = cur;
   } else {
     cur = localStorage['CURRENT'];
   }
-  localStorage['DOCUMENT-'+cur] = $("#in")[0].value;
+  var val = $("#in").val();
+  localStorage[cur] = val;
+  $("#" + cur).text(getName(val));
 }
 
 function load(cur) {
-  localStorage['CURRENT'] = cur;
-  $("#in")[0].value = localStorage['DOCUMENT-'+cur];
-  $("#go").click();
+  $('.doc').removeClass('cur');
+  var val = localStorage[cur];
+  if (val) {
+    localStorage['CURRENT'] = cur;
+    $("#in").val(val);
+    $("#go").click();
+    $("#"+cur).addClass('cur');
+  }
+}
+
+function getName(doc) {
+  var m = doc.match(/^\s*docname:\s*(\S+)/m);
+  if (m) {
+    return m[1];
+  }
+  return '';
+}
+
+function addDocName(id, text) {
+  return $("<div class='doc' id='" + id + "'>" + getName(text) + "</div>").appendTo("#list");
+}
+
+function loadText(txt) {
+  var cur = 'DOCUMENT-' + new Date().getTime().toString(16);
+  $('#in').val(txt);
+  addDocName(cur, txt).addClass('cur');
+  save(cur);
+}
+
+function newDoc() {
+  $('.doc').removeClass('cur');
+
+  var def = localStorage['DEFAULT'];
+  if (def) {
+    loadText(def);
+  } else {
+    // Populate a minimal mkd file in the input
+    $.ajax({
+      url: "https://ipv.sx/draftr-js.github.io/complete.md",
+      type: "get",
+      dataType: "text",
+      success: function(response) {
+        localStorage['DEFAULT'] = response;
+        loadText(response);
+      }
+    });
+  }
 }
 
 $(document).ready(function() {
@@ -75,34 +122,55 @@ $(document).ready(function() {
     $("#dlForm").submit();
   })
 
+  $("#plus").click(newDoc);
+  $("#minus").click(function() {
+    // TODO: replace this with something prettier
+    if (!confirm('OK to delete?')) {
+      return;
+    }
+    var n = $('.cur').next();
+    if (n.length === 0) {
+      n = $('.cur').prev();
+    }
+    $('.cur').remove();
+    delete localStorage[cur];
+    if (n.length>0) {
+      cur = n[0].id;
+      load(cur);
+    } else {
+      newDoc();
+    }
+  });
+
   // Automatically run the transform after a keypress, throttled with a timer.
   $("#in").keyup(function() {
-    // Store on every keypress until this becomes a perf issue
-    save();
     if (state.timer) {
       clearTimeout(state.timer);
     }
     state.timer = setTimeout(function(){
       state.timer = null;
-      $("#go").click();
-    }, 1000);
+      save();
+    }, 300);
+  });
+
+  $('#list').on('click', '.doc', function(evt){
+    save();
+    cur = evt.target.id;
+    $('.doc').removeClass('cur');
+    load(cur);
+  })
+
+
+  $.each(localStorage, function(key, value){
+    if (key.match(/^DOCUMENT-/)) {
+      addDocName(key, value);
+    }
   });
 
   if (cur) {
     load(cur);
   } else {
-    // Populate a minimal mkd file in the input
-    $.ajax({
-      url: "https://ipv.sx/draftr-js.github.io/complete.md",
-      type: "get",
-      dataType: "text",
-      success: function(response) {
-        IN.value = response;
-        window.ast = fromMD(IN.value)
-        OUT.value = toTXT(fromMD(IN.value));
-      }
-    })
-    save(new Date().getTime());
+    newDoc();
   }
 });
 </script>
@@ -119,14 +187,36 @@ body {
 }
 
 #container{
-  width: 170ex;
   margin: 1em auto;
   text-align: center;
   height: 95%;
 }
 
+#docs{
+  float: left;
+  margin-top: 10px;
+  margin-left: 10px;
+  width: 10%;
+}
+
+#list {
+  clear:both;
+  padding: 2px;
+}
+
+.doc {
+  margin-bottom: 10px;
+  border-top: 1px solid black;
+}
+
+.cur {
+  background: black;
+  color: white;
+}
+
 textarea {
-  width: 80ex;
+  width: 40%;
+  float: left;
   height: 95%;
   background: #ECF0F1;
   border: 1px solid #BDC3C7;
@@ -135,14 +225,25 @@ textarea {
 }
 
 button {
-  width: 80ex;
   color: white;
   background: #8E44AD;
   border: none;
-  padding: 1ex;
   font-family: Menlo, Courier, monospace;
   font-size: 12px;
   font-weight: bold;
+}
+
+.topButton {
+  width: 80ex;
+  padding: 1ex;
+}
+
+.sideButton {
+  width: 2em;
+  height: 2em;
+  text-align: center;
+  margin: 2px;
+  float: left;
 }
 
 a {
@@ -193,7 +294,13 @@ form {
 
 <!-- Main markup section -->
 <div id="container">
-<button id="go">markdown --&gt; rfc</button><br/>
+<button id="go" class="topButton">markdown --&gt; rfc</button><br/>
+<div id="docs">
+  <button id="plus" class="sideButton" title="Add Document">+</button>
+  <button id="minus" class="sideButton" title="Remove Current Document">-</button>
+  <div id="list">
+  </div>
+</div>
 <textarea id="in"></textarea>
 <textarea id="out"></textarea>
 
