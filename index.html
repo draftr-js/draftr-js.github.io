@@ -60,6 +60,8 @@ function load(cur) {
     localStorage[CURRENT] = cur;
     $("#in").val(val);
     xform();
+    $("#in").scrollTop(0);
+    $("#out").scrollTop(0);
     $("#"+cur).addClass('cur');
   }
 }
