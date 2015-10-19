@@ -18,14 +18,35 @@ var state = {
   timer: null
 }
 
+// Download the default document from here the first time
+const DEFAULT_DOC_URL = 'https://ipv.sx/draftr-js.github.io/complete.md';
+const SAVE_TIMEOUT    = 300;         // milliseconds to wait before saving
+const CURRENT         = 'CURRENT';   // The current document ID
+const DEFAULT_DOC     = 'DEFAULT';   // The default doc text
+const DOC_PREFIX      = 'DOCUMENT-'; // before every doc ID.
+const IS_DOC          = new RegExp('^' + DOC_PREFIX);
+
+// localStorage model
+// ['CURRENT']:      the ID of the document currently being edited
+// ['DOCUMENT-'+ID]: the text of the document with the given ID
+// ['DEFAULT']:      the text of the default doc.  cached for performance and
+//                   offline access.
+
+// Perform the transfrom from markdown(#in) to text(#out).
+function xform() {
+  var inp = $("#in").val();
+  var outp = toTXT(fromMD(inp));
+  $("#out").val(outp);
+}
+
 // Save the doc.  If 'cur' is specified, this is a new doc, and we need
 // to store its identifier.
 function save(cur) {
-  $("#go").click();
+  xform();
   if (cur) {
-    localStorage['CURRENT'] = cur;
+    localStorage[CURRENT] = cur;
   } else {
-    cur = localStorage['CURRENT'];
+    cur = localStorage[CURRENT];
   }
   var val = $("#in").val();
   localStorage[cur] = val;
@@ -36,15 +57,15 @@ function load(cur) {
   $('.doc').removeClass('cur');
   var val = localStorage[cur];
   if (val) {
-    localStorage['CURRENT'] = cur;
+    localStorage[CURRENT] = cur;
     $("#in").val(val);
-    $("#go").click();
+    xform();
     $("#"+cur).addClass('cur');
   }
 }
 
 function getName(doc) {
-  var m = doc.match(/^\s*docname:\s*(\S+)/m);
+  var m = doc.match(/^\s*docname:\s*(\S+)/mi);
   if (m) {
     return m[1];
   }
@@ -56,7 +77,7 @@ function addDocName(id, text) {
 }
 
 function loadText(txt) {
-  var cur = 'DOCUMENT-' + new Date().getTime().toString(16);
+  var cur = DOC_PREFIX + new Date().getTime().toString(16);
   $('#in').val(txt);
   addDocName(cur, txt).addClass('cur');
   save(cur);
@@ -65,17 +86,17 @@ function loadText(txt) {
 function newDoc() {
   $('.doc').removeClass('cur');
 
-  var def = localStorage['DEFAULT'];
+  var def = localStorage[DEFAULT_DOC];
   if (def) {
     loadText(def);
   } else {
     // Populate a minimal mkd file in the input
     $.ajax({
-      url: "https://ipv.sx/draftr-js.github.io/complete.md",
+      url: DEFAULT_DOC_URL,
       type: "get",
       dataType: "text",
       success: function(response) {
-        localStorage['DEFAULT'] = response;
+        localStorage[DEFAULT_DOC] = response;
         loadText(response);
       }
     });
@@ -83,19 +104,13 @@ function newDoc() {
 }
 
 $(document).ready(function() {
-  var IN = $("#in")[0],
-    OUT = $("#out")[0],
-    cur = localStorage['CURRENT'];
-
   // Attach the compile action to the button
-  $("#go").click(function() {
-    OUT.value = toTXT(fromMD(IN.value));
-  })
+  $("#go").click(xform)
 
   $("a.download").click(function() {
     // Update the content
-    window.state.mkd = IN.value
-    window.state.name = IN.value.match(/draft-[a-zA-Z0-9-]*/);
+    window.state.mkd = $("#in").val();
+    window.state.name = getName(window.state.mkd);
 
     // Populate the form
     var id = $(this)[0].id;
@@ -133,6 +148,7 @@ $(document).ready(function() {
       n = $('.cur').prev();
     }
     $('.cur').remove();
+    var cur = localStorage[CURRENT];
     delete localStorage[cur];
     if (n.length>0) {
       cur = n[0].id;
@@ -150,23 +166,24 @@ $(document).ready(function() {
     state.timer = setTimeout(function(){
       state.timer = null;
       save();
-    }, 300);
+    }, SAVE_TIMEOUT);
   });
 
   $('#list').on('click', '.doc', function(evt){
+    var cur = evt.target.id;
     save();
-    cur = evt.target.id;
-    $('.doc').removeClass('cur');
     load(cur);
   })
 
-
+  // Put all of the known documents into the document list
   $.each(localStorage, function(key, value){
-    if (key.match(/^DOCUMENT-/)) {
+    if (key.match(IS_DOC)) {
       addDocName(key, value);
     }
   });
 
+  // Initial load.  Default to last current document.
+  var cur = localStorage[CURRENT];
   if (cur) {
     load(cur);
   } else {
