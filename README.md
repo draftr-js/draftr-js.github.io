@@ -12,7 +12,7 @@ This project is licensed under the [MIT license](http://opensource.org/licenses/
 ## Quickstart
 
 ```
-> git clone
+> git clone https://github.com/draftr-js/draftr-js.github.io.git
 > # Open index.html in a browser
 ```
 
