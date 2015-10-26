@@ -12,9 +12,12 @@
 // * Blockquote support is limited to a single paragraph
 // * Definition lists are not supported
 
-
 function isIAL(text) {
   return text.match(/^\s*{:.*}\s*$/);
+}
+
+function sectionTitleToAnchor(title) {
+  return title.toLowerCase().replace(/\W/g, "-")
 }
 
 function parseIAL(text) {
@@ -36,7 +39,7 @@ function parseIAL(text) {
   });
 
   if ("title" in attrs) {
-    attrs.anchors.push(attrs.title.toLowerCase().replace(/ /g, "-"));
+    attrs.anchors.push(sectionTitleToAnchor(attrs.title));
   }
 
   return attrs;
@@ -101,7 +104,7 @@ function md2blocks(mkd, appendix) {
       anchors.push(text.replace(/^.*{#/, "").replace(/}.*$/, ""));
       text = text.replace(/{#\w+}\s*$/, "").trim();
     }
-    anchors.push(text.toLowerCase().replace(/ /g, "-"));
+    anchors.push(sectionTitleToAnchor(text));
 
     renderSections = sections.slice();
     if (appendix) {
@@ -120,9 +123,6 @@ function md2blocks(mkd, appendix) {
   };
 
   // Paragraphs
-  //
-  // NB: We need to return the text value here to make blockquote work.  This
-  // also implies that blockquote won't work with multiple paragraphs.
   renderer.paragraph = function(text) {
     flushListCache();
     if (isIAL(text)) {
@@ -147,7 +147,6 @@ function md2blocks(mkd, appendix) {
       type: "paragraph",
       text: text,
     });
-    return text;
   };
 
   // We leave references in a structured format for later procesing by
@@ -159,10 +158,15 @@ function md2blocks(mkd, appendix) {
   // Blockquotes
   renderer.blockquote = function(text) {
     flushListCache();
-    blocks.push({
-      type: "blockquote",
-      text: text,
-    });
+
+    // Transform the last block from a paragraph to a blockquote
+    // XXX: This means that blockquotes can only be one paragraph.
+    var block = blocks.pop();
+    if (block.type != "paragraph") {
+      throw "Only paragraphs can be blockquoted";
+    }
+    block.type = "blockquote";
+    blocks.push(block);
     return "";
   };
 

@@ -33,7 +33,7 @@ informative:
         org: University of California, Irvine
     date: 2000
 
---- note Lorem Ipsum
+--- note Lorem Ipsum (note)
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nibh mi, mollis varius imperdiet id, venenatis ut nisi. Phasellus mauris urna, ultrices at massa id, faucibus malesuada nisi.
 
@@ -54,12 +54,12 @@ Introduction
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nibh mi, mollis varius imperdiet id, venenatis ut nisi. Phasellus mauris urna, ultrices at massa id, faucibus malesuada nisi.
 
-Lorem ipsum
------------
+Lorem ipsum (level 2)
+---------------------
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nibh mi, mollis varius imperdiet id, venenatis ut nisi. Phasellus mauris urna, ultrices at massa id, faucibus malesuada nisi.
 
-### Lorem ipsum
+### Lorem ipsum (level 3)
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nibh mi, mollis varius imperdiet id, venenatis ut nisi. Phasellus mauris urna, ultrices at massa id, faucibus malesuada nisi.
 
@@ -123,7 +123,7 @@ This is a different block to separate the lists.
 
 # References {#refstyle}
 
-The IETF documents referred to here are [](RFC2119) and [](I-D.ietf-core-coap).  We also refer to [REST](REST).  [](a-rose) and [](exampleTable) are explicitly tagged, as is [](refstyle), but [](security-considerations) is implicit.  The web page at [ipv.sx](http://ipv.sx/) is not part of this document.
+The IETF documents referred to here are [](RFC2119) and [](I-D.ietf-core-coap).  We also refer to [REST](REST).  [](rose) and [](exampleTable) are explicitly tagged, as is [](refstyle), but [](security-considerations) is implicit.  The web page at [ipv.sx](http://ipv.sx/) is not part of this document.
 
 # Security Considerations
 
@@ -136,7 +136,7 @@ Seriously?
 
 --- back
 
-# Lorem ipsum
+# Lorem ipsum (appendix)
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nibh mi, mollis varius imperdiet id, venenatis ut nisi. Phasellus mauris urna, ultrices at massa id, faucibus malesuada nisi.
 

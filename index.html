@@ -6,8 +6,11 @@
 <script src="./js/lib/jquery-1.9.1.js"></script>
 <script src="./js/lib/marked.js"></script>
 <script src="./js/lib/yaml.js"></script>
+
+<script src="./js/common.js"></script>
 <script src="./js/from-md.js"></script>
 <script src="./js/to-txt.js"></script>
+<script src="./js/to-xml.js"></script>
 <script>
 
 var state = {
@@ -35,7 +38,8 @@ const IS_DOC          = new RegExp('^' + DOC_PREFIX);
 // Perform the transfrom from markdown(#in) to text(#out).
 function xform() {
   var inp = $("#in").val();
-  var outp = toTXT(fromMD(inp));
+  var outp = toXML(fromMD(inp));
+  //var outp = JSON.stringify(fromMD(inp), null, 2);
   $("#out").val(outp);
 }
 

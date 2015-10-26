@@ -13,30 +13,11 @@
 
 // Page layout constants
 var PAGE_HEIGHT = 54;
-var PAGE_WIDTH = 72;
 var TITLE_WIDTH = 60;
 var PARAGRAPH_INDENT = 3;
 var BLOCKQUOTE_INDENT = 6;
 var TOC_NUMBER_WIDTH = 4;
 var PAGE_BREAK = "\u000c\u000a";
-
-// Reference constants
-var IETF_LINK_TEMPLATE = "https://tools.ietf.org/html/";
-
-// XXX: Surely there's a better way?
-function repeat(str, n) {
-  var ret = "";
-  for (var i=0; i<n; ++i) { ret += str; }
-  return ret;
-}
-
-function blank(n) {
-  return repeat(" ", n);
-}
-
-function centerPad(outer, inner) {
-  return blank(Math.floor((outer - inner)/2));
-}
 
 function wrapText(text, indent, width) {
   if (!indent || !width) {
@@ -98,8 +79,6 @@ function addSixMonths(date) {
   return ret;
 }
 
-var months = ["January", "February", "March", "April", "May", "June", "July",
-              "August", "September", "October", "November", "December"];
 function renderDate(date) {
   return months[date.getUTCMonth()] + " " +
          date.getUTCDate() + ", " +
@@ -378,88 +357,7 @@ function block2txt(block) {
 
 ///// REFERENCES /////
 
-// Note that most of this stuff is not sepcific to TXT format.  The gathering
-// steps could in particular can be re-used, and the replacement step adapted.
-
-function isIETFReference(tag) {
-  return tag.match(/^RFC\d{1,4}$/) || tag.match(/^I-D.[\w-]+$/);
-}
-
-function isHTTPReference(tag) {
-  return tag.match(/^https?:\/\//);
-}
-
-function gatherAnchors(AST) {
-  var refs = {};
-
-  function gatherFromBlock(block) {
-    var label = "";
-    switch (block.type) {
-      case "section": label = "Section " + block.number; break;
-      case "figure" : label = "Figure "  + block.number; break;
-      case "table"  : label = "Table "   + block.number; break;
-      default: return;
-    }
-
-    for (i in block.anchors) {
-      refs[block.anchors[i]] = label;
-    }
-  }
-
-  AST.abstract.map(gatherFromBlock);
-  AST.notes.map(gatherFromBlock);
-  AST.middle.map(gatherFromBlock);
-  AST.back.map(gatherFromBlock);
-  return refs;
-}
-
-function gatherReferences(AST, anchors) {
-  var refs = {};
-
-  function gatherFromBlock(block) {
-    if (!block.text) { return; }
-
-    // For some reason, this doesn't match the final close-paren
-    var matches = block.text.match(/\[[^\]]*\]\([^)]+\)/g);
-    for (i in matches) {
-      tag = matches[i].replace(/\[[^\]]*\]\(/, "").replace(/\)/, "");
-      refs[tag] = true;
-    }
-
-    if (block.items) {
-      block.items.map(gatherFromBlock);
-    }
-  }
-
-  AST.abstract.map(gatherFromBlock);
-  AST.notes.map(gatherFromBlock);
-  AST.middle.map(gatherFromBlock);
-  AST.back.map(gatherFromBlock);
-
-  // Filter out things that are just internal references
-  var refList = Object.keys(refs).filter(function(tag) {
-    return (tag in AST.front.normative) || (tag in AST.front.normative) ||
-           isIETFReference(tag) || isHTTPReference(tag);
-  });
-  var normative = refList.filter(function(tag) { return (tag in AST.front.normative); }).sort();
-  var informative = refList.filter(function(tag) { return !(tag in AST.front.normative); }).sort();
-  Object.keys(AST.front.normative).map(function(x) { normative.push(x); });
-  Object.keys(AST.front.informative).map(function(x) { informative.push(x); });
-
-  var refMap = {};
-  for (var i=0; i < normative.length; ++i) {
-    refMap[normative[i]] = i+1;
-  }
-  for (var i=0; i < informative.length; ++i) {
-    refMap[informative[i]] = normative.length + i + 1;
-  }
-
-  return {
-    normative: normative,
-    informative: informative,
-    map: refMap,
-  };
-}
+// The gathering steps are defined in common.js.  We only do rendering here.
 
 function replaceReferences(AST, anchors, refs) {
   function replaceInBlock(block) {
@@ -512,12 +410,10 @@ function renderReferences(sectionNumber, refs) {
   });
   for (var i=0; i<refs.normative.length; ++i) {
     var refText = "["+ (i+1) +"] ";
-    if (refs.normative[i].match(/^RFC\d{1,4}$/)) {
-      rfcNumber = refs.normative[i].replace(/^RFC/, "");
-      refText += "RFC "+ rfcNumber +" <"+ IETF_LINK_TEMPLATE +"rfc"+ rfcNumber + ">";
-    } else if (refs.normative[i].match(/^I-D.[\w-]+/)) {
-      draftName = refs.normative[i].replace(/^I-D./, "");
-      refText += "draft-"+ draftName +" <"+ IETF_LINK_TEMPLATE +"draft-"+ draftName + ">";
+    if (isIETFReference(refs.normative[i])) {
+      var info = IETFReferenceInfo(refs.normative[i]);
+      refText += (info.series == "RFC")? ("RFC " + info.value) : info.value;
+               + " <"+ info.uri +">";
     } else {
       refText += refs.normative[i];
     }
@@ -534,12 +430,10 @@ function renderReferences(sectionNumber, refs) {
   });
   for (var i=0; i<refs.informative.length; ++i) {
     var refText = "["+ (refs.normative.length + i + 1) +"] ";
-    if (refs.informative[i].match(/^RFC\d{1,4}$/)) {
-      rfcNumber = refs.informative[i].replace(/^RFC/, "");
-      refText += "RFC "+ rfcNumber +" <"+ IETF_LINK_TEMPLATE +"rfc"+ rfcNumber + ">";
-    } else if (refs.informative[i].match(/^I-D.[\w-]+/)) {
-      draftName = refs.informative[i].replace(/^I-D./, "");
-      refText += "draft-"+ draftName +" <"+ IETF_LINK_TEMPLATE +"draft-"+ draftName + ">";
+    if (isIETFReference(refs.normative[i])) {
+      var info = IETFReferenceInfo(refs.normative[i]);
+      refText += (info.series == "RFC")? ("RFC " + info.value) : info.value;
+               + " <"+ info.uri +">";
     } else {
       refText += refs.informative[i];
     }
