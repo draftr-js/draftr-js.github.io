@@ -349,6 +349,12 @@ pre {
 </style>
 <!-- Github icon font -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+<!-- Syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
 </head>
 
 <body>
@@ -380,7 +386,7 @@ pre {
       <input type="radio" name="tabs" id="tab2" />
       <label for="tab2">XML</label>
       <div id="tab-content2" class="tab-content">
-        <pre id="xml"></pre>
+        <pre><code class="xml" id="xml"></code></pre>
       </div>
     </li>
     <li>
