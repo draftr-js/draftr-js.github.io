@@ -118,36 +118,6 @@ $(document).ready(function() {
   // Attach the compile action to the button
   $("#go").click(xform)
 
-  $("a.download").click(function() {
-    // Update the content
-    window.state.mkd = $("#md").val();
-    window.state.name = getName(window.state.mkd);
-
-    // Populate the form
-    var id = $(this)[0].id;
-    var content = $("#downloadContent")[0];
-    var format = $("#downloadFormat")[0];
-    var name = $("#downloadName")[0];
-    if (id.indexOf("mkd") == 0) {
-      content.value = window.state.mkd;
-      format.value = "mkd";
-      name.value = window.state.name + ".mkd";
-    } else if (id.indexOf("xml") == 0) {
-      content.value = window.state.xml;
-      format.value = "xml";
-      name.value = window.state.name + ".xml";
-    } else if (id.indexOf("txt") == 0) {
-      content.value = window.state.txt;
-      format.value = "txt";
-      name.value = window.state.name + ".txt";
-    } else {
-      return; // wat
-    }
-
-    // Submit the form
-    $("#dlForm").submit();
-  })
-
   $("#plus").click(newDoc);
   $("#minus").click(function() {
     // TODO: replace this with something prettier
