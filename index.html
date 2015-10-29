@@ -32,11 +32,11 @@ const IS_DOC          = new RegExp('^' + DOC_PREFIX);
 // ['DEFAULT']:      the text of the default doc.  cached for performance and
 //                   offline access.
 
-// Perform the transfrom from markdown(#in) to text(#out).
+// Perform the transfrom from markdown(#md) to text(#txt).
 function xform() {
-  var inp = $("#in").val();
+  var inp = $("#md").val();
   var outp = toTXT(fromMD(inp));
-  $("#out").val(outp);
+  $("#txt").val(outp);
 }
 
 // Save the doc.  If 'cur' is specified, this is a new doc, and we need
@@ -48,7 +48,7 @@ function save(cur) {
   } else {
     cur = localStorage[CURRENT];
   }
-  var val = $("#in").val();
+  var val = $("#md").val();
   localStorage[cur] = val;
   $("#" + cur).text(getName(val));
 }
@@ -58,10 +58,10 @@ function load(cur) {
   var val = localStorage[cur];
   if (val) {
     localStorage[CURRENT] = cur;
-    $("#in").val(val);
+    $("#md").val(val);
     xform();
-    $("#in").scrollTop(0);
-    $("#out").scrollTop(0);
+    $("#md").scrollTop(0);
+    $("#txt").scrollTop(0);
     $("#"+cur).addClass('cur');
   }
 }
@@ -80,7 +80,7 @@ function addDocName(id, text) {
 
 function loadText(txt) {
   var cur = DOC_PREFIX + new Date().getTime().toString(16);
-  $('#in').val(txt);
+  $('#md').val(txt);
   addDocName(cur, txt).addClass('cur');
   save(cur);
 }
@@ -111,7 +111,7 @@ $(document).ready(function() {
 
   $("a.download").click(function() {
     // Update the content
-    window.state.mkd = $("#in").val();
+    window.state.mkd = $("#md").val();
     window.state.name = getName(window.state.mkd);
 
     // Populate the form
@@ -161,7 +161,7 @@ $(document).ready(function() {
   });
 
   // Automatically run the transform after a keypress, throttled with a timer.
-  $("#in").keyup(function() {
+  $("#md").keyup(function() {
     if (state.timer) {
       clearTimeout(state.timer);
     }
@@ -194,28 +194,113 @@ $(document).ready(function() {
 });
 </script>
 <style>
-
-html { height: 95%; }
+* {
+  margin: 0;
+  padding: 0;
+}
 
 body {
+  text-align: left;
+  font-size: 12pt;
+  font-family: Menlo, Courier, monospace;
+}
+
+#container {
+  width: 34em;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 100%;
+  text-align: center;
+  padding-top: 1ex;
+}
+
+.tabs {
+  width: 100%;
+  float: none;
+  list-style: none;
+  position: relative;
+}
+
+.tabs li {
+  float: left;
+  display: block;
+}
+
+.tabs input[type="radio"] {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+}
+
+.tabs label {
+  display: block;
+  padding: .5ex 2ex;
+  font-weight: bold;
+  background: white;
+  cursor: pointer;
+  position: relative;
+}
+
+.tabs label:hover {
+  background: gray;
+}
+
+.tabs .tab-content {
+  z-index: 2;
+  display: none;
+  width: 100%;
+  padding: 1ex;
+  position: absolute;
+  left: 0;
+  color: white;
+  background: black;
+}
+.tabs [id^="tab"]:checked + label {
+  color: white;
+  background: black;
+}
+.tabs [id^="tab"]:checked ~ [id^="tab-content"] {
+  display: block;
+}
+
+textarea {
+  width: 74ch;
+  float: left;
+  height: 56em;
   background: #ECF0F1;
+  border: 1px solid #BDC3C7;
   font-family: Menlo, Courier, monospace;
   font-size: 12px;
-  height: 95%;
-  margin: 0
 }
 
-#container{
-  margin: 1em auto;
-  text-align: center;
-  height: 95%;
+/** Fork me on Github **/
+#forkme {
+  display: block;
+  float: right;
+  background: #3498DB;
+  color: white;
+  padding: 1ex;
+  margin: 0;
 }
 
-#docs{
+#forkme a {
+  text-decoration: none;
+  color: inherit;
+}
+
+#forkme a i {
+  font-size: 150%;
+}
+
+/** Document list **/
+#docs {
   float: left;
-  margin-top: 10px;
+  clear: left;
   margin-left: 10px;
-  width: 10%;
+  font-size: 80%;
+  width: 30ch;
 }
 
 #list {
@@ -224,8 +309,8 @@ body {
 }
 
 .doc {
-  margin-bottom: 10px;
   border-top: 1px solid black;
+  padding: 5px;
 }
 
 .cur {
@@ -233,69 +318,16 @@ body {
   color: white;
 }
 
-textarea {
-  width: 40%;
-  float: left;
-  height: 95%;
-  background: #ECF0F1;
-  border: 1px solid #BDC3C7;
-  font-family: Menlo, Courier, monospace;
-  font-size: 12px;
-}
-
-button {
+.sideButton {
   color: white;
   background: #8E44AD;
-  border: none;
-  font-family: Menlo, Courier, monospace;
-  font-size: 12px;
   font-weight: bold;
-}
-
-.topButton {
-  width: 80ex;
-  padding: 1ex;
-}
-
-.sideButton {
+  border: none;
   width: 2em;
   height: 2em;
   text-align: center;
   margin: 2px;
   float: left;
-}
-
-a {
-  width: 80ex;
-  color: white;
-  background: #2980B9;
-  border: none;
-  padding: 2ex;
-  font-family: Menlo, Courier, monospace;
-  font-size: 12px;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-form {
-  display: none;
-}
-
-#forkme {
-  display: block;
-  float: left;
-  background: #3498DB;
-  color: #ECF0F1;
-  margin: 0;
-}
-
-#forkme a {
-  text-decoration: none
-  color: inherit;
-}
-
-#forkme a i {
-  font-size: 150%;
 }
 
 </style>
@@ -311,17 +343,32 @@ form {
   </a>
 </div>
 
-<!-- Main markup section -->
-<div id="container">
-<button id="go" class="topButton">markdown --&gt; rfc</button><br/>
 <div id="docs">
   <button id="plus" class="sideButton" title="Add Document">+</button>
   <button id="minus" class="sideButton" title="Remove Current Document">-</button>
-  <div id="list">
-  </div>
+  <div id="list"></div>
 </div>
-<textarea id="in"></textarea>
-<textarea id="out"></textarea>
+
+<div id="container">
+
+<h1>draftr</h1>
+  <ul class="tabs">
+    <li>
+      <input type="radio" name="tabs" id="tab1" checked />
+      <label for="tab1">MD</label>
+      <div id="tab-content1" class="tab-content">
+        <textarea id="md"></textarea>
+      </div>
+    </li>
+    <li>
+      <input type="radio" name="tabs" id="tab2" />
+      <label for="tab2">TXT</label>
+      <div id="tab-content2" class="tab-content">
+        <textarea id="txt"></textarea>
+      </div>
+    </li>
+  </ul>
+</div>
 
 <!-- TODO: re-enable file downloads -->
 <!--
@@ -337,7 +384,6 @@ form {
   <input type="hidden" id="downloadName" name="name"/>
 </form>
 -->
-</div>
 
 </body>
 </html>
