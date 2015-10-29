@@ -6,6 +6,7 @@
 <script src="./js/lib/jquery-1.9.1.js"></script>
 <script src="./js/lib/marked.js"></script>
 <script src="./js/lib/yaml.js"></script>
+<script src="./js/lib/vkbeautify.js"></script>
 
 <script src="./js/common.js"></script>
 <script src="./js/from-md.js"></script>
@@ -37,9 +38,14 @@ const IS_DOC          = new RegExp('^' + DOC_PREFIX);
 
 // Perform the transfrom from markdown(#md) to text(#txt).
 function xform() {
-  var inp = $("#md").val();
-  var outp = toTXT(fromMD(inp));
-  $("#txt").val(outp);
+  var input = $("#md").val();
+  var AST = fromMD(input);
+
+  var txtout = toTXT(AST);
+  $("#txt").text(txtout);
+
+  var xmlout = toXML(AST);
+  $("#xml").text(xmlout);
 }
 
 // Save the doc.  If 'cur' is specified, this is a new doc, and we need
@@ -257,25 +263,32 @@ h1 {
   padding: 1ex;
   position: absolute;
   left: 0;
-  color: white;
   background: black;
 }
 .tabs [id^="tab"]:checked + label {
-  color: white;
+  color:white;
   background: black;
 }
 .tabs [id^="tab"]:checked ~ [id^="tab-content"] {
   display: block;
 }
 
-textarea {
+textarea, pre {
   width: 74ch;
-  float: left;
   height: 56em;
-  background: #ECF0F1;
-  border: 1px solid #BDC3C7;
-  font-family: Menlo, Courier, monospace;
   font-size: 12px;
+}
+
+textarea {
+  color: black;
+  background: white;
+  font-family: Menlo, Courier, monospace;
+}
+
+pre {
+  color: #333;
+  background: #eee;
+  overflow: scroll;
 }
 
 /** Fork me on Github **/
@@ -365,9 +378,16 @@ textarea {
     </li>
     <li>
       <input type="radio" name="tabs" id="tab2" />
-      <label for="tab2">TXT</label>
+      <label for="tab2">XML</label>
       <div id="tab-content2" class="tab-content">
-        <textarea id="txt"></textarea>
+        <pre id="xml"></pre>
+      </div>
+    </li>
+    <li>
+      <input type="radio" name="tabs" id="tab3" />
+      <label for="tab3">TXT</label>
+      <div id="tab-content3" class="tab-content">
+        <pre id="txt"></pre>
       </div>
     </li>
   </ul>

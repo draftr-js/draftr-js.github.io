@@ -11,6 +11,8 @@
 // In general renderFOO functions return a list of lists (blocks) of lines, where
 // a block represents a group of lines that should not be split by pagination.
 
+(function() {
+
 // Page layout constants
 var PAGE_HEIGHT = 54;
 var TITLE_WIDTH = 60;
@@ -592,7 +594,7 @@ function pageFooterTemplate(metadata) {
   return footer;
 }
 
-function toTXT(AST) {
+window.toTXT = function(AST) {
   // TODO Validate incoming object
   AST.front.date = AST.front.date || (new Date());
 
@@ -680,3 +682,5 @@ function toTXT(AST) {
                                 .map(renderPage);
   return renderedPages.join(PAGE_BREAK);
 }
+
+})();

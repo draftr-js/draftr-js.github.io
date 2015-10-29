@@ -1,5 +1,7 @@
 // TODO Documentation
 
+(function() {
+
 var XML_STUB = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE rfc SYSTEM 'rfc2629.dtd' []>\n<rfc/>"
 
 // <tag>text</tag>
@@ -411,7 +413,7 @@ function renderReferences(xml, tags) {
   return references;
 }
 
-function toXML(AST) {
+window.toXML = function(AST) {
   // TODO Validate incoming object
   // TODO Move this to fromFOO
   AST.front.date = AST.front.date || (new Date());
@@ -432,5 +434,8 @@ function toXML(AST) {
   // Assemble the document
   window.xml = xml;
   var serializer = new XMLSerializer();
-  return serializer.serializeToString(xml);
+  var serialized = serializer.serializeToString(xml);
+  return vkbeautify.xml(serialized, 2);
 }
+
+})();
