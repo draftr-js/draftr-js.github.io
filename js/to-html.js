@@ -17,7 +17,6 @@ function appendSimpleChild(doc, node, tag, text) {
 
 // front = (title , author+ , date , area* , workgroup* , keyword* , abstract? , note*)
 function appendFront(xml, metadata, abstractBlocks, notesBlocks) {
-  console.log("appendFront");
   var body = xml.documentElement;
 
   // Add title
@@ -75,6 +74,7 @@ function appendFront(xml, metadata, abstractBlocks, notesBlocks) {
 }
 
 function appendMiddle(xml, blocks) {
+  var body = xml.documentElement;
   for (i in blocks) {
     appendBlock(xml, body, blocks[i]);
   }
