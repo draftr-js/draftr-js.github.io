@@ -609,7 +609,7 @@ window.toTXT = function(AST) {
             .map(function(x) { if (x.number > maxSectionNumber) { maxSectionNumber = x.number; } });
   maxSectionNumber = parseInt(maxSectionNumber);
   var referenceAST = renderReferences(maxSectionNumber+1, refs);
-  AST.middle = AST.middle.concat(referenceAST);
+  var middle = AST.middle.slice().concat(referenceAST);
 
 
   // Preliminary render and paginate
@@ -630,7 +630,7 @@ window.toTXT = function(AST) {
   }
   AST.abstract.map(render);
   AST.notes.map(render);
-  AST.middle.map(render);
+  middle.map(render);
   AST.back.map(render);
   var boilerplateBlocks = prepareBoilerplate(AST.front.date);
   var authorBlocks = renderAuthorsAddresses(AST.front.author);
@@ -638,8 +638,8 @@ window.toTXT = function(AST) {
                     .concat(AST.abstract)
                     .concat(boilerplateBlocks)
                     .concat(AST.notes);
-  var middleBackBlocks = AST.middle.concat(AST.back)
-                                   .concat(authorBlocks);
+  var middleBackBlocks = middle.concat(AST.back)
+                               .concat(authorBlocks);
   var frontPages = paginate(frontBlocks);
   var middleBackPages = paginate(middleBackBlocks);
 

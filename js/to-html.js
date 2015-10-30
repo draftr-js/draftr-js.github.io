@@ -76,14 +76,16 @@ function appendFront(xml, metadata, abstractBlocks, notesBlocks) {
 
 function appendMiddle(xml, blocks) {
   for (i in blocks) {
-    appendBlock(xml, xml.documentElement, blocks[i]);
+    appendBlock(xml, body, blocks[i]);
   }
 }
 
 function appendBack(xml, references, blocks) {
+  var body = xml.documentElement;
+
   // First add the references
   /*
-  // XXX
+  // TODO
   if (references.normative && references.normative.length > 0) {
     var refsElement = renderReferences(xml, references.normative);
     refsElement.setAttribute("title", "Normative References");
@@ -346,15 +348,15 @@ window.toHTML = function(AST) {
   var parser = new DOMParser();
   var html = parser.parseFromString(HTML_STUB, "text/xml"); // Actually html
 
-  /*
   var anchors = gatherAnchors(AST);
   var refs = gatherReferences(AST, anchors);
+  /*
   replaceReferences(AST, anchors, refs);
   */
 
   appendFront(html, AST.front, AST.abstract.slice(), AST.notes.slice());
   appendMiddle(html, AST.middle.slice());
-  //XXX appendBack(xml, refs, AST.back);
+  appendBack(html, refs, AST.back);
 
 
   // Assemble the document
