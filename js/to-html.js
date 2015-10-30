@@ -2,7 +2,7 @@
 
 (function() {
 
-var XML_STUB = "<?xml version='1.0' encoding='UTF-8'?>\n<!DOCTYPE rfc SYSTEM 'rfc2629.dtd' []>\n<rfc/>"
+var HTML_STUB = "<body>\n</body>";
 
 // <tag>text</tag>
 function appendSimpleChild(doc, node, tag, text) {
@@ -126,21 +126,15 @@ function appendFront(xml, metadata, abstractBlocks, notesBlocks) {
 }
 
 function appendMiddle(xml, blocks) {
-  var middle = xml.createElement("middle");
-
-  // It is expected that section2xml will make the blocks
-  // array shorter (using blocks.shift()).
   while (blocks.length > 0) {
-    middle.appendChild(section2xml(xml, blocks));
+    appendBlock(xml, xml.documentElement, blocks.shift());
   }
-
-  xml.documentElement.appendChild(middle);
 }
 
 function appendBack(xml, references, blocks) {
-  var back = xml.createElement("back");
-
   // First add the references
+  /*
+  // XXX
   if (references.normative && references.normative.length > 0) {
     var refsElement = renderReferences(xml, references.normative);
     refsElement.setAttribute("title", "Normative References");
@@ -151,184 +145,160 @@ function appendBack(xml, references, blocks) {
     refsElement.setAttribute("title", "Informative References");
     back.appendChild(refsElement);
   }
+  */
 
   // Then add the sections, as for <middle>
   while (blocks.length > 0) {
-    back.appendChild(section2xml(xml, blocks));
+    appendBlock(xml, xml.documentElement, blocks.shift());
   }
-
-  xml.documentElement.appendChild(back);
-}
-
-function section2xml(xml, blocks) {
-  var sectionBlock = blocks.shift();
-  if (sectionBlock.type != "section") {
-    throw "Unexpected non-section block";
-  }
-
-  var section = xml.createElement("section");
-  section.setAttribute("title", sectionBlock.text);
-  if (sectionBlock.anchors && sectionBlock.anchors.length > 0) {
-    section.setAttribute("anchor", sectionBlock.anchors[0]);
-  }
-
-  while (blocks.length > 0 && blocks[0].type != "section") {
-    var newElement;
-    if (blocks[0].type == "section") {
-      if (blocks[0].level > sectionBlock.level) {
-        newElement = section2xml(xml, blocks);
-      } else {
-        break;
-      }
-    } else {
-      newElement = block2xml(xml, blocks.shift());
-    }
-    section.appendChild(newElement);
-  }
-  return section;
 }
 
 // This function will handle simple block types, i.e., the ones that are totally
 // described by a block object, i.e., not "section".
-function block2xml(xml, block) {
+function appendBlock(xml, node, block) {
   switch (block.type) {
     case "paragraph":
-      var t = xml.createElement("t");
-      t.innerHTML = block.text;
-      return t;
-
-    case "table":
-      return renderTable(xml, block);
-
-    case "figure":
-      return renderFigure(xml, block);
-
-    case "listnode":
-      return renderList(xml, block);
+      var p = xml.createElement("p");
+      p.innerHTML = block.text;
+      node.appendChild(p);
+      break;
 
     case "blockquote":
-      return renderBlockquote(xml, block);
+      var blockquote = xml.createElement("blockquote");
+      blockquote.innerHTML = block.text;
+      node.appendChild(blockquote);
+      break;
 
     case "section":
-      throw "Section passed to block2xml";
+      if (block.anchors && block.anchors.length > 0) {
+        var anchor = xml.createElement("a");
+        anchor.setAttribute("name", block.anchors[0]);
+        node.appendChild(anchor);
+      }
+      var tagName = "h" + (block.level + 1);
+      var hN = xml.createElement(tagName);
+      hN.innerHTML = block.number + ". " + block.text;
+      node.appendChild(hN);
+      break;
+
+    case "figure":
+      appendFigure(xml, node, block);
+      break;
+
+    case "listnode":
+      appendList(xml, node, block);
+      break;
+
+    case "table":
+      appendTable(xml, node, block);
+      break;
 
     default:
       throw "Unknown block type: " + block.type;
   }
 }
 
-function renderFigure(xml, block) {
+function appendFigure(xml, node, block) {
   var figure = xml.createElement("figure");
 
-  // XXX: Set other attributes on texttable?
-  //      (align=center, alt="", suppress-title=false)
+  // The figure itself
+  var pre = xml.createElement("pre");
+  pre.setAttribute("style", "background: #ccc; border: 1px solid #999; border-radius: 4px;");
+  var cdata = xml.createTextNode(block.text);
+  pre.appendChild(cdata);
+  figure.appendChild(pre);
+
+  // Anchor
   if (block.anchors && block.anchors.length > 0) {
-    figure.setAttribute("anchor", block.anchors[0]);
-  }
-  if (block.title) {
-    figure.setAttribute("title", block.title);
+    var anchor = xml.createElement("a");
+    anchor.setAttribute("name", block.anchors[0]);
+    figure.appendChild(anchor);
   }
 
-  // We center-justify the figure, as we do for TXT format
-  var lines = block.text.split("\n");
-  var width = 0;
-  lines.map(function(line) {
-    width = (line.length > width)? line.length : width;
-  });
-  var pad = centerPad(PAGE_WIDTH, width);
-  var centered = lines.map(function(line) { return pad + line; })
-                      .join("\n")
-
-  var artwork = xml.createElement("artwork");
-  artwork.appendChild(xml.createCDATASection(centered));
-  figure.appendChild(artwork);
-  return figure;
+  // Title
+  if (block.number && block.title) {
+    var figcaption = xml.createElement("figcaption");
+    figcaption.innerHTML = "Figure "+ block.number +". "+ block.title;
+    figure.appendChild(figcaption);
+  }
+  node.appendChild(figure);
+  return;
 }
 
-function renderTable(xml, block) {
-  var texttable = xml.createElement("texttable");
+function appendTable(xml, node, block) {
+  var table = xml.createElement("table");
 
-  // XXX: Set other attributes on texttable?
-  //      (align=center, style=full, suppress-title=false)
-  if (block.anchors && block.anchors.length > 0) {
-    texttable.setAttribute("anchor", block.anchors[0]);
-  }
-  if (block.title) {
-    texttable.setAttribute("title", block.title);
-  }
-
-  // Add column headers <ttcol>
+  // Add column headers <tr><th>...</tr>
   var data = block.data;
   if (data.length == 0) {
     throw "Empty table";
   }
+  var colAlign = [];
+  var tr = xml.createElement("tr");
   for (j in data[0].cells) {
-    var ttcol = xml.createElement("ttcol");
+    var th = xml.createElement("th");
 
     // Take first stated alignment, defaulting to "left"
     var align = null;
     for (i in data) {
       align = align || data[i].flags[j].align;
     }
-    if (align) {
-      ttcol.setAttribute("align", align);
-    }
+    align = align || "left";
+    th.setAttribute("align", align);
+    colAlign.push(align);
 
-    ttcol.innerHTML = data[0].cells[j];
-    texttable.appendChild(ttcol);
+    th.innerHTML = data[0].cells[j];
+    tr.appendChild(th);
   }
+  table.appendChild(tr);
 
-  // Add cells in <c>
+  // Add cells in <tr><td>...</tr>
   for (var i=1; i<data.length; ++i) {
+    var tr = xml.createElement("tr");
     for (j in data[i].cells) {
-      var c = xml.createElement("c");
-      c.innerHTML = data[i].cells[j];
-      texttable.appendChild(c);
+      var td = xml.createElement("td");
+      td.innerHTML = data[i].cells[j];
+      td.setAttribute("align", colAlign[j]);
+      tr.appendChild(td);
     }
+    table.appendChild(tr);
   }
 
-  return texttable;
+  // Caption
+  if (block.number && block.title) {
+    var figcaption = xml.createElement("caption");
+    figcaption.innerHTML = "Figure "+ block.number +". "+ block.title;
+    table.appendChild(figcaption);
+  }
+
+  node.appendChild(table);
+
+  // Anchor is appended after <table>, if present
+  if (block.anchors && block.anchors.length > 0) {
+    var anchor = xml.createElement("a");
+    anchor.setAttribute("name", block.anchors[0]);
+    node.appendChild(anchor);
+  }
 }
 
-function renderList(xml, block) {
-  var t = xml.createElement("t");
-
+function appendList(xml, node, block) {
   if (block.text) {
-    t.appendChild(xml.createTextNode(block.text));
+    node.appendChild(xml.createTextNode(block.text));
   }
 
   if (!block.items || block.items.length == 0) {
-    return t;
+    return;
   }
 
-  var list = xml.createElement("list");
-
-  if (block.ordered) {
-    list.setAttribute("style", "symbols");
-  } else {
-    list.setAttribute("style", "numbers");
-  }
+  var listTag = (block.ordered)? "ol" : "ul";
+  var list = xml.createElement(listTag);
 
   for (i in block.items) {
-    list.appendChild(renderList(xml, block.items[i]));
+    var li = xml.createElement("li");
+    appendList(xml, li, block.items[i]);
+    list.appendChild(li);
   }
-
-  t.appendChild(list)
-  return t;
-}
-
-function renderBlockquote(xml, block) {
-  // Blockquotes are rendered with <list style="empty">
-  var tOuter = xml.createElement("t");
-  var list = xml.createElement("list");
-  list.setAttribute("style", "empty");
-
-  var tInner = xml.createElement("t");
-  tInner.innerHTML = block.text;
-
-  list.appendChild(tInner);
-  tOuter.appendChild(list);
-  return tOuter;
+  node.appendChild(list);
 }
 
 // HTTP URIs aren't acceptable as targets/anchors, so transform them
@@ -413,30 +383,34 @@ function renderReferences(xml, tags) {
   return references;
 }
 
-window.toXML = function(AST) {
+window.toHTML = function(AST) {
   // TODO Validate incoming object
   // TODO Move this to fromFOO
   AST.front.date = AST.front.date || (new Date());
   AST.front.abbrev = AST.front.abbrev || AST.front.title;
 
   var parser = new DOMParser();
-  var xml = parser.parseFromString(XML_STUB, "text/xml");
+  var html = parser.parseFromString(HTML_STUB, "text/xml"); // Actually html
 
+  /*
   var anchors = gatherAnchors(AST);
   var refs = gatherReferences(AST, anchors);
   replaceReferences(AST, anchors, refs);
+  */
 
-  appendFront(xml, AST.front, AST.abstract, AST.notes);
+  // Assemble and add the <front> element
+  //XXX appendFront(xml, AST.front, AST.abstract, AST.notes);
 
   var middle = AST.middle.slice();
-  appendMiddle(xml, middle);
+  appendMiddle(html, AST.middle);
 
-  var back = AST.back.slice();
-  appendBack(xml, refs, back);
+  //XXX var back = AST.back.slice();
+  //XXX appendBack(xml, refs, AST.back);
+
 
   // Assemble the document
   var serializer = new XMLSerializer();
-  var serialized = serializer.serializeToString(xml);
+  var serialized = serializer.serializeToString(html);
   return vkbeautify.xml(serialized, 2);
 }
 
