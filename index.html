@@ -7,6 +7,7 @@
 <script src="./js/lib/marked.js"></script>
 <script src="./js/lib/yaml.js"></script>
 <script src="./js/lib/vkbeautify.js"></script>
+<script src="./js/lib/FileSaver.js"></script>
 
 <script src="./js/common.js"></script>
 <script src="./js/from-md.js"></script>
@@ -16,7 +17,8 @@
 <script>
 
 var state = {
-  mkd: null,
+  ast: null,
+  md: null,
   xml: null,
   txt: null,
   name: null,
@@ -39,18 +41,16 @@ const IS_DOC          = new RegExp('^' + DOC_PREFIX);
 
 // Perform the transfrom from markdown(#md) to text(#txt).
 function xform() {
-  var input = $("#md").val();
-  var AST = fromMD(input);
-  window.AST = AST;
+  state.md = $("#md").val();
+  state.ast = fromMD(state.md);
+  state.xml = toXML(state.ast);
+  state.txt = toTXT(state.ast);
+  state.html = toHTML(state.ast);
 
-  var txt = toTXT(AST);
-  $("#txt").text(txt);
+  $("#xml").text(state.xml);
+  $("#txt").text(state.txt);
 
-  var xml = toXML(AST);
-  $("#xml").text(xml);
-
-  var html = toHTML(AST);
-  var htmlBlob = new Blob([html], {type: "text/html"});
+  var htmlBlob = new Blob([state.html], {type: "text/html"});
   var htmlBlobURL = URL.createObjectURL(htmlBlob);
   $("#html").attr("src", htmlBlobURL);
 }
@@ -146,6 +146,24 @@ $(document).ready(function() {
     }
   });
 
+  $(".download").click(function() {
+    var type = $(this).attr("id").replace(/^download-/, "");
+    console.log(type);
+
+    var mimeType = null;
+    switch (type) {
+      case "md": mimeType = "text/markdown"; break;
+      case "xml": mimeType = "text/xml"; break;
+      case "txt": mimeType = "text/plain"; break;
+      case "html": mimeType = "text/html"; break;
+    }
+
+    var name = getName($("#md").val()) + "." + type;
+    var blob = new Blob([state[type]], {type: mimeType});
+    saveAs(blob, name);
+
+  });
+
   // Automatically run the transform after a keypress, throttled with a timer.
   $("#md").keyup(function() {
     if (state.timer) {
@@ -192,7 +210,7 @@ body {
 }
 
 #container {
-  width: 34em;
+  width: 36em;
   margin: 0 auto;
 }
 
@@ -255,6 +273,9 @@ h1 {
   width: 74ch;
   height: 56em;
   font-size: 12px;
+  display: block;
+  float: left;
+  border: 1px solid black;
 }
 
 textarea.docDisplay {
@@ -270,7 +291,6 @@ pre.docDisplay {
 }
 
 iframe.docDisplay {
-  border: 1px solid black;
   background: white;
 }
 
@@ -329,6 +349,19 @@ iframe.docDisplay {
   float: left;
 }
 
+/** Download buttons **/
+.download {
+  display: block;
+  float: right;
+  background: #3498DB;
+  color: white;
+  padding: .5ex;
+  margin: 0;
+  font-size: 120%;
+  cursor: pointer;
+}
+
+
 </style>
 <!-- Github icon font -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
@@ -361,6 +394,9 @@ iframe.docDisplay {
       <label for="tab1">MD</label>
       <div id="tab-content1" class="tab-content">
         <textarea id="md" class="docDisplay"></textarea>
+        <div id="download-md" class="download">
+          <i class="fa fa-cloud-download"></i>
+        </div>
       </div>
     </li>
     <li>
@@ -368,6 +404,9 @@ iframe.docDisplay {
       <label for="tab2">XML</label>
       <div id="tab-content2" class="tab-content">
         <pre class="docDisplay"><code class="xml" id="xml"></code></pre>
+        <div id="download-xml" class="download">
+          <i class="fa fa-cloud-download"></i>
+        </div>
       </div>
     </li>
     <li>
@@ -375,6 +414,9 @@ iframe.docDisplay {
       <label for="tab3">TXT</label>
       <div id="tab-content3" class="tab-content">
         <pre id="txt" class="docDisplay"></pre>
+        <div id="download-txt" class="download">
+          <i class="fa fa-cloud-download"></i>
+        </div>
       </div>
     </li>
     <li>
@@ -382,6 +424,9 @@ iframe.docDisplay {
       <label for="tab4">HTML</label>
       <div id="tab-content4" class="tab-content">
         <iframe id="html" class="docDisplay"></iframe>
+        <div id="download-html" class="download">
+          <i class="fa fa-cloud-download"></i>
+        </div>
       </div>
     </li>
   </ul>
