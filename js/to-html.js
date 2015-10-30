@@ -17,117 +17,66 @@ function appendSimpleChild(doc, node, tag, text) {
 
 // front = (title , author+ , date , area* , workgroup* , keyword* , abstract? , note*)
 function appendFront(xml, metadata, abstractBlocks, notesBlocks) {
-  xml.documentElement.setAttribute("ipr", "trust200902");
-  xml.documentElement.setAttribute("docName", metadata.docname);
-  xml.documentElement.setAttribute("category", metadata.cat);
-
-  var front = xml.createElement("front");
+  console.log("appendFront");
+  var body = xml.documentElement;
 
   // Add title
-  var title = xml.createElement("title");
+  var title = xml.createElement("h1");
   if (metadata.abbrev) {
     title.setAttribute("abbrev", metadata.abbrev);
   }
   title.innerHTML = metadata.title;
-  front.appendChild(title);
+  body.appendChild(title);
+
 
   // Add authors
+  var authors = xml.createElement("p");
   for (i in metadata.author) {
     var data = metadata.author[i];
-    var author = xml.createElement("author");
-
-    if (data.name) {
-      author.setAttribute("fullname", data.name);
-    }
-    if (data.ins && data.ins.match(/^[A-Z. ]+ /)) {
-      var initials = data.ins.match(/^[A-Z. ]+ /)[0].trim();
-      var surname = data.ins.replace(/^[A-Z. ]+ /, "").trim();
-      author.setAttribute("initials", initials);
-      author.setAttribute("surname", surname);
-    }
-    if (data.role) {
-      author.setAttribute("role", data.role);
-    }
+    var authorString = data.name;
 
     // Organization
     if (data.org) {
-      appendSimpleChild(xml, author, "organization", data.org);
-
+      authorString += " ("+ data.org +")";
     }
 
-    // TODO: Handle other address types
-    if (data.country || data.phone || data.facsimile || data.email || data.uri) {
-      var address = xml.createElement("address");
-      if (data.country) {
-        var postal = xml.createElement("postal");
-        for (var i in data.street) {
-          appendSimpleChild(xml, postal, "street", data.street[i]);
-        }
-
-        appendSimpleChild(xml, postal, "city", data.city);
-        appendSimpleChild(xml, postal, "region", data.region);
-        appendSimpleChild(xml, postal, "code", data.code);
-        appendSimpleChild(xml, postal, "country", data.country);
-        address.appendChild(postal);
-      }
-
-      appendSimpleChild(xml, address, "phone", data.phone);
-      appendSimpleChild(xml, address, "facsimile", data.facsimile);
-      appendSimpleChild(xml, address, "email", data.email);
-      appendSimpleChild(xml, address, "uri", data.uri);
-      author.appendChild(address);
+    if ((i == metadata.author.length - 1) && (i > 0)) {
+      authorString = "and " + authorString;
+    } else if (metadata.author.length > 1) {
+      authorString = authorString + ", ";
     }
 
-    front.appendChild(author);
+    authors.innerHTML += authorString;
   }
+  body.appendChild(authors);
 
   // Add date
-  var date = xml.createElement("date");
-  date.setAttribute("year", metadata.date.getFullYear());
-  date.setAttribute("month", months[metadata.date.getMonth()]);
-  date.setAttribute("day", metadata.date.getDate());
-  front.appendChild(date);
+  var date = xml.createElement("p");
+  date.innerHTML = months[metadata.date.getMonth()] + " " +
+                   metadata.date.getDate() + ", " +
+                   metadata.date.getFullYear();
+  body.appendChild(date);
 
   // TODO Area, workgroup, keyword (?)
 
   // Add abstract
   if (abstractBlocks && abstractBlocks.length > 0) {
-    var abstract = xml.createElement("abstract");
     for (var i in abstractBlocks) {
-      if (abstractBlocks[i].type != "paragraph") {
-        // XXX fromMD() should not emit a "section" block for the abstract.
-        continue;
-      }
-      abstract.appendChild(block2xml(xml, abstractBlocks[i]));
+      appendBlock(xml, body, abstractBlocks[i]);
     }
-    front.appendChild(abstract);
   }
 
   // Add notes
   if (notesBlocks && notesBlocks.length > 0) {
-    var note = xml.createElement("note");
-    var firstBlock = notesBlocks.shift();
-    note.setAttribute("title", firstBlock.text);
-
     for (var i in notesBlocks) {
-      var block = notesBlocks[i];
-      if (block.type == "section") {
-        front.appendChild(note);
-        note = xml.createElement("note");
-        note.setAttribute("title", block.text);
-      } else {
-        note.appendChild(block2xml(xml, block));
-      }
+      appendBlock(xml, body, notesBlocks[i]);
     }
-    front.appendChild(note);
   }
-
-  xml.documentElement.appendChild(front);
 }
 
 function appendMiddle(xml, blocks) {
-  while (blocks.length > 0) {
-    appendBlock(xml, xml.documentElement, blocks.shift());
+  for (i in blocks) {
+    appendBlock(xml, xml.documentElement, blocks[i]);
   }
 }
 
@@ -148,8 +97,8 @@ function appendBack(xml, references, blocks) {
   */
 
   // Then add the sections, as for <middle>
-  while (blocks.length > 0) {
-    appendBlock(xml, xml.documentElement, blocks.shift());
+  for (i in blocks) {
+    appendBlock(xml, xml.documentElement, blocks[i]);
   }
 }
 
@@ -175,9 +124,14 @@ function appendBlock(xml, node, block) {
         anchor.setAttribute("name", block.anchors[0]);
         node.appendChild(anchor);
       }
-      var tagName = "h" + (block.level + 1);
+      var title = block.text;
+      if (block.number) {
+        title = block.number + ". " + title;
+      }
+      var level = block.level || 1;
+      var tagName = "h" + (level + 1);
       var hN = xml.createElement(tagName);
-      hN.innerHTML = block.number + ". " + block.text;
+      hN.innerHTML = title;
       node.appendChild(hN);
       break;
 
@@ -398,13 +352,8 @@ window.toHTML = function(AST) {
   replaceReferences(AST, anchors, refs);
   */
 
-  // Assemble and add the <front> element
-  //XXX appendFront(xml, AST.front, AST.abstract, AST.notes);
-
-  var middle = AST.middle.slice();
-  appendMiddle(html, AST.middle);
-
-  //XXX var back = AST.back.slice();
+  appendFront(html, AST.front, AST.abstract.slice(), AST.notes.slice());
+  appendMiddle(html, AST.middle.slice());
   //XXX appendBack(xml, refs, AST.back);
 
 

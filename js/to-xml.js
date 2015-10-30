@@ -426,13 +426,9 @@ window.toXML = function(AST) {
   var refs = gatherReferences(AST, anchors);
   replaceReferences(AST, anchors, refs);
 
-  appendFront(xml, AST.front, AST.abstract, AST.notes);
-
-  var middle = AST.middle.slice();
-  appendMiddle(xml, middle);
-
-  var back = AST.back.slice();
-  appendBack(xml, refs, back);
+  appendFront(xml, AST.front, AST.abstract.slice(), AST.notes.slice());
+  appendMiddle(xml, AST.middle.slice());
+  appendBack(xml, refs, AST.back.slice());
 
   // Assemble the document
   var serializer = new XMLSerializer();
