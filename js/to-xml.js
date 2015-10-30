@@ -426,13 +426,11 @@ window.toXML = function(AST) {
   var refs = gatherReferences(AST, anchors);
   replaceReferences(AST, anchors, refs);
 
-  // Assemble and add the <front> element
-  appendFront(xml, AST.front, AST.abstract, AST.notes);
-  appendMiddle(xml, AST.middle);
-  appendBack(xml, refs, AST.back);
+  appendFront(xml, AST.front, AST.abstract.slice(), AST.notes.slice());
+  appendMiddle(xml, AST.middle.slice());
+  appendBack(xml, refs, AST.back.slice());
 
   // Assemble the document
-  window.xml = xml;
   var serializer = new XMLSerializer();
   var serialized = serializer.serializeToString(xml);
   return vkbeautify.xml(serialized, 2);

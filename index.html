@@ -12,6 +12,7 @@
 <script src="./js/from-md.js"></script>
 <script src="./js/to-txt.js"></script>
 <script src="./js/to-xml.js"></script>
+<script src="./js/to-html.js"></script>
 <script>
 
 var state = {
@@ -40,12 +41,18 @@ const IS_DOC          = new RegExp('^' + DOC_PREFIX);
 function xform() {
   var input = $("#md").val();
   var AST = fromMD(input);
+  window.AST = AST;
 
-  var txtout = toTXT(AST);
-  $("#txt").text(txtout);
+  var txt = toTXT(AST);
+  $("#txt").text(txt);
 
-  var xmlout = toXML(AST);
-  $("#xml").text(xmlout);
+  var xml = toXML(AST);
+  $("#xml").text(xml);
+
+  var html = toHTML(AST);
+  var htmlBlob = new Blob([html], {type: "text/html"});
+  var htmlBlobURL = URL.createObjectURL(htmlBlob);
+  $("#html").attr("src", htmlBlobURL);
 }
 
 // Save the doc.  If 'cur' is specified, this is a new doc, and we need
@@ -117,36 +124,6 @@ function newDoc() {
 $(document).ready(function() {
   // Attach the compile action to the button
   $("#go").click(xform)
-
-  $("a.download").click(function() {
-    // Update the content
-    window.state.mkd = $("#md").val();
-    window.state.name = getName(window.state.mkd);
-
-    // Populate the form
-    var id = $(this)[0].id;
-    var content = $("#downloadContent")[0];
-    var format = $("#downloadFormat")[0];
-    var name = $("#downloadName")[0];
-    if (id.indexOf("mkd") == 0) {
-      content.value = window.state.mkd;
-      format.value = "mkd";
-      name.value = window.state.name + ".mkd";
-    } else if (id.indexOf("xml") == 0) {
-      content.value = window.state.xml;
-      format.value = "xml";
-      name.value = window.state.name + ".xml";
-    } else if (id.indexOf("txt") == 0) {
-      content.value = window.state.txt;
-      format.value = "txt";
-      name.value = window.state.name + ".txt";
-    } else {
-      return; // wat
-    }
-
-    // Submit the form
-    $("#dlForm").submit();
-  })
 
   $("#plus").click(newDoc);
   $("#minus").click(function() {
@@ -235,6 +212,7 @@ h1 {
 .tabs li {
   float: left;
   display: block;
+  margin-top: 1em;
 }
 
 .tabs input[type="radio"] {
@@ -273,22 +251,27 @@ h1 {
   display: block;
 }
 
-textarea, pre {
+.docDisplay {
   width: 74ch;
   height: 56em;
   font-size: 12px;
 }
 
-textarea {
+textarea.docDisplay {
   color: black;
   background: white;
   font-family: Menlo, Courier, monospace;
 }
 
-pre {
+pre.docDisplay {
   color: #333;
   background: #eee;
   overflow: scroll;
+}
+
+iframe.docDisplay {
+  border: 1px solid black;
+  background: white;
 }
 
 /** Fork me on Github **/
@@ -372,28 +355,33 @@ pre {
 </div>
 
 <div id="container">
-
-<h1>draftr</h1>
   <ul class="tabs">
     <li>
       <input type="radio" name="tabs" id="tab1" checked />
       <label for="tab1">MD</label>
       <div id="tab-content1" class="tab-content">
-        <textarea id="md"></textarea>
+        <textarea id="md" class="docDisplay"></textarea>
       </div>
     </li>
     <li>
       <input type="radio" name="tabs" id="tab2" />
       <label for="tab2">XML</label>
       <div id="tab-content2" class="tab-content">
-        <pre><code class="xml" id="xml"></code></pre>
+        <pre class="docDisplay"><code class="xml" id="xml"></code></pre>
       </div>
     </li>
     <li>
       <input type="radio" name="tabs" id="tab3" />
       <label for="tab3">TXT</label>
       <div id="tab-content3" class="tab-content">
-        <pre id="txt"></pre>
+        <pre id="txt" class="docDisplay"></pre>
+      </div>
+    </li>
+    <li>
+      <input type="radio" name="tabs" id="tab4" />
+      <label for="tab4">HTML</label>
+      <div id="tab-content4" class="tab-content">
+        <iframe id="html" class="docDisplay"></iframe>
       </div>
     </li>
   </ul>
