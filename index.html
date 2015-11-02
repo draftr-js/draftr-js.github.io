@@ -126,7 +126,7 @@ $(document).ready(function() {
   // Upgrade to HTTPS if needed
   // Note: The condition is not "!= https" so that we allow for file:
   if (window.location.protocol == "http:") {
-    console.log(window.location.href.replace(/^[^:]+:/, "https:"));
+    window.location.href.replace(/^[^:]+:/, "https:");
   }
 
   // Attach the compile action to the button
