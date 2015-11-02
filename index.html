@@ -70,7 +70,6 @@ function save(cur) {
 }
 
 function load(cur) {
-  $('.doc').removeClass('cur');
   var val = localStorage[cur];
   if (val) {
     localStorage[CURRENT] = cur;
@@ -78,6 +77,7 @@ function load(cur) {
     xform();
     $("#md").scrollTop(0);
     $("#txt").scrollTop(0);
+    $("#list").val(cur);
     $("#"+cur).addClass('cur');
   }
 }
@@ -91,13 +91,14 @@ function getName(doc) {
 }
 
 function addDocName(id, text) {
-  return $("<div class='doc' id='" + id + "'>" + getName(text) + "</div>").appendTo("#list");
+  return $("<option class='doc' value='" + id + "' id='" + id + "'>" + getName(text) + "</option>").appendTo("#list");
 }
 
 function loadText(txt) {
   var cur = DOC_PREFIX + new Date().getTime().toString(16);
   $('#md').val(txt);
   addDocName(cur, txt).addClass('cur');
+  $("#list").val(cur);
   save(cur);
 }
 
@@ -145,6 +146,10 @@ $(document).ready(function() {
       newDoc();
     }
   });
+  $("#list").change(function() {
+    var cur = $("#list").val();
+    $("#"+cur).addClass("cur");
+  })
 
   $(".download").click(function() {
     var type = $(this).attr("id").replace(/^download-/, "");
@@ -175,10 +180,9 @@ $(document).ready(function() {
     }, SAVE_TIMEOUT);
   });
 
-  $('#list').on('click', '.doc', function(evt){
-    var cur = evt.target.id;
+  $('#list').change(function(evt){
     save();
-    load(cur);
+    load($("#list").val());
   })
 
   // Put all of the known documents into the document list
@@ -210,7 +214,7 @@ body {
 }
 
 #container {
-  width: 36em;
+  width: 77em;
   margin: 0 auto;
 }
 
@@ -220,8 +224,14 @@ h1 {
   padding-top: 1ex;
 }
 
+.tabbox {
+  display: block;
+  float: left;
+  width: 38em;
+}
+
 .tabs {
-  width: 100%;
+  width: 36em;
   float: none;
   list-style: none;
   position: relative;
@@ -261,11 +271,22 @@ h1 {
   left: 0;
   background: black;
 }
+
 .tabs [id^="tab"]:checked + label {
   color:white;
   background: black;
 }
+
 .tabs [id^="tab"]:checked ~ [id^="tab-content"] {
+  display: block;
+}
+
+.tabs [id^="md-tab"]:checked + label {
+  color:white;
+  background: black;
+}
+
+.tabs [id^="md-tab"]:checked ~ [id^="md-tab-content"] {
   display: block;
 }
 
@@ -296,6 +317,7 @@ iframe.docDisplay {
 
 /** Fork me on Github **/
 #forkme {
+  font-size: 75%;
   display: block;
   float: right;
   background: #3498DB;
@@ -315,26 +337,13 @@ iframe.docDisplay {
 
 /** Document list **/
 #docs {
-  float: left;
-  clear: left;
-  margin-left: 10px;
-  font-size: 80%;
-  width: 30ch;
-}
-
-#list {
-  clear:both;
-  padding: 2px;
+  height: 2em;
+  clear: both;
 }
 
 .doc {
   border-top: 1px solid black;
   padding: 5px;
-}
-
-.cur {
-  background: black;
-  color: white;
 }
 
 .sideButton {
@@ -375,61 +384,67 @@ iframe.docDisplay {
 
 <body>
 
-<div id="forkme">
-  <a href="https://github.com/draftr-js/draftr-js.github.io">
-    <i class="fa fa-code-fork"></i> me on <i class="fa fa-github"></i>
-  </a>
-</div>
 
-<div id="docs">
-  <button id="plus" class="sideButton" title="Add Document">+</button>
-  <button id="minus" class="sideButton" title="Remove Current Document">-</button>
-  <div id="list"></div>
-</div>
 
 <div id="container">
-  <ul class="tabs">
-    <li>
-      <input type="radio" name="tabs" id="tab1" checked />
-      <label for="tab1">MD</label>
-      <div id="tab-content1" class="tab-content">
-        <textarea id="md" class="docDisplay"></textarea>
-        <div id="download-md" class="download">
-          <i class="fa fa-cloud-download"></i>
+  <div id="docs">
+    <button id="plus" class="sideButton" title="Add Document">+</button>
+    <button id="minus" class="sideButton" title="Remove Current Document">-</button>
+    <select id="list"></select>
+    <div id="forkme">
+      <a href="https://github.com/draftr-js/draftr-js.github.io">
+        <i class="fa fa-code-fork"></i> me on <i class="fa fa-github"></i>
+      </a>
+    </div>
+  </div>
+  <div class="tabbox">
+    <ul class="tabs">
+      <li>
+        <input type="radio" name="md-tabs" id="md-tab" checked />
+        <label for="md-tab">MD</label>
+        <div id="md-tab-content" class="tab-content">
+          <textarea id="md" class="docDisplay"></textarea>
+          <div id="download-md" class="download">
+            <i class="fa fa-cloud-download"></i>
+          </div>
         </div>
-      </div>
-    </li>
-    <li>
-      <input type="radio" name="tabs" id="tab2" />
-      <label for="tab2">XML</label>
-      <div id="tab-content2" class="tab-content">
-        <pre class="docDisplay"><code class="xml" id="xml"></code></pre>
-        <div id="download-xml" class="download">
-          <i class="fa fa-cloud-download"></i>
+      </li>
+    </ul>
+  </div>
+  <div class="tabbox">
+    <ul class="tabs">
+      <li>
+        <input type="radio" name="tabs" id="tab2" />
+        <label for="tab2">XML</label>
+        <div id="tab-content2" class="tab-content">
+          <pre class="docDisplay"><code class="xml" id="xml"></code></pre>
+          <div id="download-xml" class="download">
+            <i class="fa fa-cloud-download"></i>
+          </div>
         </div>
-      </div>
-    </li>
-    <li>
-      <input type="radio" name="tabs" id="tab3" />
-      <label for="tab3">TXT</label>
-      <div id="tab-content3" class="tab-content">
-        <pre id="txt" class="docDisplay"></pre>
-        <div id="download-txt" class="download">
-          <i class="fa fa-cloud-download"></i>
+      </li>
+      <li>
+        <input type="radio" name="tabs" id="tab3" checked />
+        <label for="tab3">TXT</label>
+        <div id="tab-content3" class="tab-content">
+          <pre id="txt" class="docDisplay"></pre>
+          <div id="download-txt" class="download">
+            <i class="fa fa-cloud-download"></i>
+          </div>
         </div>
-      </div>
-    </li>
-    <li>
-      <input type="radio" name="tabs" id="tab4" />
-      <label for="tab4">HTML</label>
-      <div id="tab-content4" class="tab-content">
-        <iframe id="html" class="docDisplay"></iframe>
-        <div id="download-html" class="download">
-          <i class="fa fa-cloud-download"></i>
+      </li>
+      <li>
+        <input type="radio" name="tabs" id="tab4" />
+        <label for="tab4">HTML</label>
+        <div id="tab-content4" class="tab-content">
+          <iframe id="html" class="docDisplay"></iframe>
+          <div id="download-html" class="download">
+            <i class="fa fa-cloud-download"></i>
+          </div>
         </div>
-      </div>
-    </li>
-  </ul>
+      </li>
+    </ul>
+  </div>
 </div>
 
 <!-- TODO: re-enable file downloads -->
