@@ -48,6 +48,7 @@ function xform() {
   state.html = toHTML(state.ast);
 
   $("#xml").text(state.xml);
+  $("#xml").each(function(i, e) {hljs.highlightBlock(e)});
   $("#txt").text(state.txt);
 
   var htmlBlob = new Blob([state.html], {type: "text/html"});
