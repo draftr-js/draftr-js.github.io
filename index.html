@@ -48,6 +48,7 @@ function xform() {
   state.html = toHTML(state.ast);
 
   $("#xml").text(state.xml);
+  $("#xml").each(function(i, e) {hljs.highlightBlock(e)});
   $("#txt").text(state.txt);
 
   var htmlBlob = new Blob([state.html], {type: "text/html"});
@@ -383,6 +384,8 @@ iframe.docDisplay {
 
 <!-- Syntax highlighting -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/styles/default.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/styles/github.min.css">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
